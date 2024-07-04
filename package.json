@@ -12,7 +12,9 @@
   "packageManager": "pnpm@8.8.0+sha1.9922e8b650d393700209ccd81e0ebdbcbe43b0d3",
   "dependencies": {
     "canvas": "^2.11.2",
+    "glob": "^10.4.2",
     "jpeg-js": "^0.4.4",
+    "opencv-wasm": "4.3.0-10",
     "opencv.js": "^1.2.1",
     "opencv4nodejs": "^5.6.0",
     "pdf-lib": "^1.17.1",

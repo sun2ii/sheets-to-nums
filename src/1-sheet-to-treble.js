@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 const cv = require('opencv.js');
-const config = require('../config.js');
+const config = require('../configs/config.js');
 
 // Function to apply non-maximum suppression
 function nonMaximumSuppression(boxes, overlapThresh) {
