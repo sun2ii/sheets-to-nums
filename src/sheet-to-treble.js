@@ -1,8 +1,20 @@
+/*
+-------------------------------------------------
+sheet-to-treble.js
+-------------------------------------------------
+    Input  : Takes in a PNG file of a music sheet
+    Output : Takes all of the Right hand "musical phrases" and divides them up into individual PNG files.
+
+    Process
+        - Matches against pictures via "trebles/"
+        - Play with THRESHOLD value in "config.js"
+*/
+
 const fs = require('fs');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 const cv = require('opencv.js');
-const config = require('./config.js');
+const config = require('../config.js');
 
 // Function to apply non-maximum suppression
 function nonMaximumSuppression(boxes, overlapThresh) {
@@ -111,7 +123,7 @@ async function detectTrebleClefs() {
                     const x = i % result.cols;
                     const y = Math.floor(i / result.cols);
                     const width = result.cols - x;
-                    rectangles.push([x, y, width, templateMat.rows]);
+                    rectangles.push([2 * x, y, width, templateMat.rows]);
                 }
             }
         }
