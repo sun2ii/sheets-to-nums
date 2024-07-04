@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 const cv = require('opencv.js');
+const config = require('../config.js');
 
 // Function to generate a random color
 function getRandomColor() {
@@ -13,27 +14,14 @@ function getRandomColor() {
     return color;
 }
 
-// Configuration for size and shape filtering
-const config = {
-    minArea: 50, // Minimum area to consider a contour as a note head
-    maxArea: 100, // Maximum area to consider a contour as a note head
-    aspectRatioThreshold: 0.1, // Aspect ratio threshold to filter elongated shapes
-    circularityThreshold: 0.1, // Circularity threshold to ensure the shape is approximately circular
-    maxContourWidth: 20, // Maximum width for a contour to be considered
-    maxContourHeight: 100, // Maximum height for a contour to be considered
-    inputPath: './note_1.png', // Path to your input image
-    outputNotesFolder: 'test/abc/', // Folder to save segmented notes
-    outputFullImagePath: './output.png' // Path to save the full image with color-coded contours
-};
-
 // Ensure the output directory exists
-if (!fs.existsSync(config.outputNotesFolder)) {
-    fs.mkdirSync(config.outputNotesFolder, { recursive: true });
+if (!fs.existsSync(config.notesOutputFolder)) {
+    fs.mkdirSync(config.notesOutputFolder, { recursive: true });
 }
 
 async function findContoursAndDisplay() {
     try {
-        const src = await loadImage(config.inputPath);
+        const src = await loadImage(config.notesInputPath);
         const canvas = createCanvas(src.width, src.height);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(src, 0, 0, src.width, src.height);
@@ -45,10 +33,10 @@ async function findContoursAndDisplay() {
 
         // Apply adaptive thresholding
         const binaryMat = new cv.Mat();
-        cv.adaptiveThreshold(grayMat, binaryMat, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+        cv.adaptiveThreshold(grayMat, binaryMat, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 19, 1);
 
         // Morphological operations to remove noise
-        const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3));
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
         cv.morphologyEx(binaryMat, binaryMat, cv.MORPH_CLOSE, kernel);
         cv.morphologyEx(binaryMat, binaryMat, cv.MORPH_OPEN, kernel);
 
@@ -73,7 +61,7 @@ async function findContoursAndDisplay() {
             const perimeter = cv.arcLength(contour, true);
 
             // Filter contours based on dimensions
-            if (rect.width > config.maxContourWidth || rect.height > config.maxContourHeight) {
+            if (rect.width > config.maxContourWidth) {
                 continue;
             }
 
@@ -101,10 +89,10 @@ async function findContoursAndDisplay() {
         }
 
         // Save the image with color-coded contours to verify
-        const out = fs.createWriteStream(config.outputFullImagePath);
+        const out = fs.createWriteStream(config.notesOutputPath);
         const stream = contoursCanvas.createPNGStream();
         stream.pipe(out);
-        out.on('finish', () => console.log(`The image with color-coded contours was saved: ${config.outputFullImagePath}`));
+        out.on('finish', () => console.log(`The image with color-coded contours was saved: ${config.notesOutputPath}`));
 
         // Save the individual notes as images and print their dimensions
         detectedNotes.forEach((note, index) => {
@@ -112,7 +100,7 @@ async function findContoursAndDisplay() {
             const noteCtx = noteCanvas.getContext('2d');
             noteCtx.drawImage(canvas, note.x, note.y, note.width, note.height, 0, 0, note.width, note.height);
 
-            const noteOutPath = path.join(config.outputNotesFolder, `note_${index + 1}.png`);
+            const noteOutPath = path.join(config.notesOutputFolder, `note_${index + 1}.png`);
             const noteOut = fs.createWriteStream(noteOutPath);
             const noteStream = noteCanvas.createPNGStream();
             noteStream.pipe(noteOut);
