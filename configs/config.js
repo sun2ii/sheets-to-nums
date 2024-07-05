@@ -1,24 +1,26 @@
-const musicSheet = "etude-101";
+const musicSheet = "etude-12";
 
 module.exports = {
-  // 1 - sheet to treble : SECTION
-  sheetInputPath: `../input/${musicSheet}.png`,
-  sheetOutputPath: `../output/1-section/${musicSheet}.png`,
-  sheetOutputFolder: `../output/1-section/${musicSheet}/`,
+  // Folders
   templateFolder: '../templates/trebles',
+
+  // 1. Sheets
+  sheetInputPath: `../input/${musicSheet}.png`,
+  sheetOutputPath: `../output/1-sheet-to-sections/main/${musicSheet}.png`,
+  sheetOutputFolder: `../output/1-sheet-to-sections/${musicSheet}/`,
+
+  // 2. Phrases
+  phrasesInputPath: `../output/1-sheet-to-sections/${musicSheet}/note_3.png`,
+  phrasesOutputFolder: `../output/2-to-phrases/${musicSheet}/`,
+
+  // Other Settings
   threshold: 0.5,
-
-  // 2 - treble to notes : PHRASE
-
-  minArea: 10, // Minimum area to consider a contour as a note head
-  maxArea: 500, // Maximum area to consider a contour as a note head
-  aspectRatioThreshold: 0.05, // Aspect ratio threshold to filter elongated shapes
-  circularityThreshold: 0.05, // Circularity threshold to ensure the shape is approximately circular
+  minArea: 10, 
+  maxArea: 500, 
+  aspectRatioThreshold: 0.05,
+  circularityThreshold: 0.05, 
   minContourWidth: 5,
   minContourHeight: 5,
-  maxContourWidth: 50, // Maximum width for a contour to be considered (changed to 20)
+  maxContourWidth: 50, 
   maxContourHeight: 50,
-  notesInputPath: `../output/1-section/${musicSheet}/note_2.png`,
-  notesOutputPath: `../output/2-phrase/${musicSheet}.png`,
-  notesOutputFolder: `../output/2-phrase/${musicSheet}/`,
 };

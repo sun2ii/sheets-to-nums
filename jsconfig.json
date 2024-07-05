@@ -3,7 +3,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@/output/*": ["output/*"]
+      "@configs/*": ["configs/*"],
+      "@input/*": ["input/*"],
+      "@output/*": ["output/*"],
+      "@src/*": ["src/*"],
+      "@templates/*": ["templates/*"]
     }
   }
 }

@@ -2,13 +2,10 @@ const { createCanvas, loadImage, ImageData } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const config = require('../configs/config');
+const { phrasesInputPath, phrasesOutputFolder } = require('../configs/config');
 
 // Load opencv.js
 const cv = require('opencv.js');
-
-// Load the image
-const imgPath = './note_3.png';
 
 // Utility function to save a cv.Mat as an image
 function saveMat(mat, outputPath) {
@@ -24,16 +21,15 @@ function saveMat(mat, outputPath) {
 
 // Function to crop and save the section using sharp
 function cropAndSaveSection(inputImagePath, x1, x2, sectionIndex) {
-    const outputImagePath = path.resolve(__dirname, `section_${sectionIndex}.png`);
     sharp(inputImagePath)
         .metadata()
         .then(metadata => {
             return sharp(inputImagePath)
                 .extract({ left: x1, top: 0, width: x2 - x1, height: metadata.height })
-                .toFile(outputImagePath);
+                .toFile(`${phrasesOutputFolder}section_${sectionIndex}.png`);
         })
         .then(() => {
-            console.log(`The cropped section has been saved to ${outputImagePath}`);
+            console.log(`The cropped section has been saved to ${phrasesOutputFolder}section_${sectionIndex}.png`);
         })
         .catch(err => {
             console.error('Error cropping the image:', err);
@@ -41,7 +37,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, sectionIndex) {
 }
 
 // Load the image and process it
-loadImage(imgPath).then(image => {
+loadImage(phrasesInputPath).then(image => {
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0, image.width, image.height);
@@ -107,7 +103,7 @@ loadImage(imgPath).then(image => {
         for (let i = 0; i < combinedLines.length - 1; i++) {
             let x1 = combinedLines[i];
             let x2 = combinedLines[i + 1];
-            cropAndSaveSection(imgPath, x1, x2, i);
+            cropAndSaveSection(phrasesInputPath, x1, x2, i);
         }
 
         lines.delete();
