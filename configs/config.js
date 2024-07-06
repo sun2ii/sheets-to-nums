@@ -10,7 +10,7 @@ module.exports = {
   sheetOutputFolder: `../output/1-sheet-to-sections/${musicSheet}/`,
 
   // 2. Phrases
-  phrasesInputPath: `../output/1-sheet-to-sections/${musicSheet}/note_3.png`,
+  phrasesInputPath: `../output/1-sheet-to-sections/${musicSheet}/note_2.png`,
   phrasesOutputFolder: `../output/2-to-phrases/${musicSheet}/`,
 
   // Other Settings

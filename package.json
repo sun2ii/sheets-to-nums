@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "one": "cd src; node 1-sheet-to-sections.js",
+    "two": "cd src; node 2-sections-to-phrases.js",
+    "three": "cd src; node 3-phrases-to-notes.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
