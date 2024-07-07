@@ -34,7 +34,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, height, sectionIndex) {
 }
 
 // Load the image
-const imagePath = './b.png';
+const imagePath = './all-treble.png';
 
 loadImage(imagePath).then((image) => {
     // Create a canvas and draw the image on it
@@ -49,74 +49,78 @@ loadImage(imagePath).then((image) => {
     // Convert to grayscale
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    // saveMatAsImage(gray, '_1-gray.png'); // Save intermediate grayscale image
 
     // Apply binary thresholding
     let binary = new cv.Mat();
     cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
-    // saveMatAsImage(binary, '_2-binary.png'); // Save intermediate binary image
 
     // Define a horizontal kernel and detect horizontal lines
     let horizontalKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(40, 1));
     let detectedLines = new cv.Mat();
     cv.morphologyEx(binary, detectedLines, cv.MORPH_OPEN, horizontalKernel);
-    // saveMatAsImage(detectedLines, '_3-detectedLines.png'); // Save detected horizontal lines image
 
-    // Subtract detected lines from the binary image
-    let horizontalRemoved = new cv.Mat();
-    cv.subtract(binary, detectedLines, horizontalRemoved);
-    // saveMatAsImage(horizontalRemoved, '_4-horizontalRemoved.png'); // Save the image with horizontal lines removed
+    // Store coordinates of the horizontal lines
+    let horizontalLineCoordinates = [];
 
-    // Optional: Clean up the remaining noise
-    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-    let cleaned = new cv.Mat();
-    cv.morphologyEx(horizontalRemoved, cleaned, cv.MORPH_CLOSE, kernel);
-    // saveMatAsImage(cleaned, '_5-cleaned.png'); // Save the cleaned image
-
-    // Find contours
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(cleaned, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-    // Create an array of bounding rectangles
-    let boundingRects = [];
-    for (let i = 0; i < contours.size(); ++i) {
-        let contour = contours.get(i);
-        let rect = cv.boundingRect(contour);
-        if (rect.width > 20) {
-            boundingRects.push({ rect: rect, contourIndex: i });
+    // Draw purple lines on the detected horizontal lines
+    for (let y = 0; y < detectedLines.rows; y++) {
+        for (let x = 0; x < detectedLines.cols; x++) {
+            if (detectedLines.ucharPtr(y, x)[0] === 255) {
+                // Draw a purple line
+                cv.line(src, new cv.Point(x, y), new cv.Point(x + 1, y), [128, 0, 128, 255], 1);
+                // Store the y-coordinate
+                horizontalLineCoordinates.push(y);
+            }
         }
     }
 
-    // Sort the rectangles by their x-coordinate
-    boundingRects.sort((a, b) => a.rect.x - b.rect.x);
+    // Count occurrences of each y-coordinate
+    const yCoordinateOccurrences = {};
+    horizontalLineCoordinates.forEach(y => {
+        yCoordinateOccurrences[y] = (yCoordinateOccurrences[y] || 0) + 1;
+    });
 
-    // Process the sorted rectangles
-    for (let validSectionIndex = 0; validSectionIndex < boundingRects.length; ++validSectionIndex) {
-        let { rect, contourIndex } = boundingRects[validSectionIndex];
-        console.log(`box ${validSectionIndex + 1}: x=${rect.x}, y=${rect.y}, width=${rect.width}, height=${rect.height}`);
+    // Debug: log the counts of each y-coordinate
+    console.log('Occurrences of each y-coordinate:', yCoordinateOccurrences);
 
-        // Crop and save the section using sharp
-        cropAndSaveSection(imagePath, rect.x, rect.x + rect.width, src.rows, validSectionIndex + 1);
+    // Get the sorted y-coordinates excluding 0
+    let sortedYCoordinates = Object.entries(yCoordinateOccurrences)
+        .map(entry => parseInt(entry[0]))
+        .filter(y => y !== 0) // Exclude 0
+        .sort((a, b) => a - b);
 
-        // Draw the bounding box
-        let point1 = new cv.Point(rect.x, 0);
-        let point2 = new cv.Point(rect.x + rect.width, src.rows);
-        cv.rectangle(src, point1, point2, [255, 0, 0, 255], 2); // Adjust color and thickness as needed
-
-        // Prepare the text annotation
-        let text = (validSectionIndex + 1).toString();
-        let textPosition = new cv.Point(rect.x - 10, 10); // Position the text above the rectangle
-
-        // Set text properties
-        let fontScale = 0.5;
-        let color = new cv.Scalar(0, 0, 255, 255); // Blue color
-        let thickness = 2;
-        let font = cv.FONT_HERSHEY_SIMPLEX;
-
-        // Put the text on the image
-        cv.putText(src, text, textPosition, font, fontScale, color, thickness);
+    // Combine close values and ensure consistent distances
+    let combinedYCoordinates = [];
+    const threshold = 10; // Adjust this threshold as needed for "closeness"
+    for (let i = 0; i < sortedYCoordinates.length; i++) {
+        if (i === 0 || sortedYCoordinates[i] - combinedYCoordinates[combinedYCoordinates.length - 1] > threshold) {
+            combinedYCoordinates.push(sortedYCoordinates[i]);
+        }
     }
+
+    // Ensure we have exactly 5 y-coordinates by adjusting the threshold if needed
+    while (combinedYCoordinates.length > 5) {
+        combinedYCoordinates.pop();
+    }
+
+    // Ensure consistent distances and default to even numbers
+    let finalYCoordinates = [combinedYCoordinates[0]];
+    for (let i = 1; i < combinedYCoordinates.length; i++) {
+        let nextY = finalYCoordinates[finalYCoordinates.length - 1] + 2 * Math.round((combinedYCoordinates[i] - finalYCoordinates[finalYCoordinates.length - 1]) / 2);
+        finalYCoordinates.push(nextY);
+    }
+
+    // Add intermediate coordinates by dividing the distance by 2
+    let allYCoordinates = [];
+    for (let i = 0; i < finalYCoordinates.length - 1; i++) {
+        allYCoordinates.push(finalYCoordinates[i]);
+        let midPoint = Math.round((finalYCoordinates[i] + finalYCoordinates[i + 1]) / 2);
+        allYCoordinates.push(midPoint);
+    }
+    allYCoordinates.push(finalYCoordinates[finalYCoordinates.length - 1]);
+
+    // Save the top 5 y-coordinates and intermediate coordinates to a JSON file
+    fs.writeFileSync('bars.json', JSON.stringify({ top5YCoordinates: allYCoordinates.sort((a, b) => a - b) }, null, 2));
 
     // Save the annotated image
     const outputImageData = new ImageData(new Uint8ClampedArray(src.data), src.cols, src.rows);
@@ -135,17 +139,16 @@ loadImage(imagePath).then((image) => {
     const out = fs.createWriteStream('./_6-output.png');
     const stream = rotatedCanvas.createPNGStream();
     stream.pipe(out);
-    out.on('finish', () => console.log('The image was created.'));
+    out.on('finish', () => {
+        console.log('The image was created.');
+        console.log('Top 5 y-coordinates and intermediate coordinates:', allYCoordinates.sort((a, b) => a - b));
+    });
 
     // Cleanup
     src.delete();
     gray.delete();
     binary.delete();
     detectedLines.delete();
-    horizontalRemoved.delete();
-    cleaned.delete();
-    contours.delete();
-    hierarchy.delete();
 }).catch((err) => {
     console.error('Error:', err);
 });
