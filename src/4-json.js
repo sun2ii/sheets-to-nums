@@ -106,6 +106,6 @@ async function processImage(imagePath, outputPath) {
     hierarchy.delete();
 }
 
-const imagePath = './test/7.png';
+const imagePath = './section_1.png';
 const outputPath = './a.png';
 processImage(imagePath, outputPath).catch(err => console.error(err));

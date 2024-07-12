@@ -1,20 +1,9 @@
-/*
--------------------------------------------------
-sheet-to-treble.js
--------------------------------------------------
-    Input  : Takes in a PNG file of a music sheet
-    Output : Takes all of the Right hand "musical phrases" and divides them up into individual PNG files.
-
-    Process
-        - Matches against pictures via "trebles/"
-        - Play with THRESHOLD value in "config.js"
-*/
+const { sheetInputPath, phrasesOutputFolder, phrasesOutputPath, templateFolder } = require('../configs/config.js');
 
 const fs = require('fs');
-const path = require('path');
-const { createCanvas, loadImage } = require('canvas');
 const cv = require('opencv.js');
-const config = require('../configs/config.js');
+const { createCanvas, loadImage } = require('canvas');
+const path = require('path');
 
 // Function to apply non-maximum suppression
 function nonMaximumSuppression(boxes, overlapThresh) {
@@ -84,7 +73,7 @@ async function loadTemplates(folderPath) {
 
 async function detectTrebleClefs() {
     try {
-        const src = await loadImage(config.sheetInputPath);
+        const src = await loadImage(sheetInputPath);
         const canvas = createCanvas(src.width, src.height);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(src, 0, 0, src.width, src.height);
@@ -95,14 +84,14 @@ async function detectTrebleClefs() {
         cv.cvtColor(grayMat, grayMat, cv.COLOR_RGBA2GRAY);
 
         // Load templates from the folder
-        const templates = await loadTemplates(config.templateFolder);
+        const templates = await loadTemplates(templateFolder);
 
         // Ensure the output directory exists
-        if (!fs.existsSync(config.sheetOutputFolder)) {
-            fs.mkdirSync(config.sheetOutputFolder, { recursive: true });
+        if (!fs.existsSync(phrasesOutputFolder)) {
+            fs.mkdirSync(phrasesOutputFolder, { recursive: true });
         }
 
-        let noteCount = 1;
+        let phraseCount = 1;
         const rectangles = [];
 
         for (const templateMat of templates) {
@@ -117,9 +106,10 @@ async function detectTrebleClefs() {
             cv.matchTemplate(grayMat, templateMat, result, cv.TM_CCOEFF_NORMED);
 
             // Thresholding to find good matches
+            const threshold = 0.5;
             const resultData = result.data32F;
             for (let i = 0; i < resultData.length; i++) {
-                if (resultData[i] >= config.threshold) {
+                if (resultData[i] >= threshold) {
                     const x = i % result.cols;
                     const y = Math.floor(i / result.cols);
                     const width = result.cols - (2 * x);
@@ -138,24 +128,24 @@ async function detectTrebleClefs() {
             ctx.lineWidth = 3;
             ctx.strokeRect(x, y, width, height);
 
-            // Extract and save the note image
-            const noteCanvas = createCanvas(width, height);
-            const noteCtx = noteCanvas.getContext('2d');
-            noteCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
-            const noteOutPath = path.join(config.sheetOutputFolder, `note_${noteCount}.png`);
-            const noteOut = fs.createWriteStream(noteOutPath);
-            const noteStream = noteCanvas.createPNGStream();
-            noteStream.pipe(noteOut);
-            noteOut.on('finish', () => console.log(`The PNG file was created: ${noteOutPath}`));
-            noteCount++;
+            // Extract and save the phrases image
+            const phraseCanvas = createCanvas(width, height);
+            const phraseCtx = phraseCanvas.getContext('2d');
+            phraseCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+            const phraseFileName = `phrase_${phraseCount}.png`;
+            const phraseOutPath = path.join(phrasesOutputFolder, phraseFileName);
+            const phraseOut = fs.createWriteStream(phraseOutPath);
+            const phraseStream = phraseCanvas.createPNGStream();
+            phraseStream.pipe(phraseOut);
+            phraseOut.on('finish', () => console.log(`${phraseOutPath}`));
+            phraseCount++;
         }
 
         // Save the result
-        const out = fs.createWriteStream(config.sheetOutputPath);
+        const out = fs.createWriteStream(phrasesOutputPath);
         const stream = canvas.createPNGStream();
         stream.pipe(out);
-        out.on('finish', () => console.log('The PNG file was created.'));
-    } catch (error) {
+    }  catch (error) {
         console.error('Error detecting treble clefs:', error);
     }
 }

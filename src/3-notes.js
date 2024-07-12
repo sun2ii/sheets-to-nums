@@ -1,8 +1,9 @@
-const sharp = require('sharp');
-const { ImageData, createCanvas, loadImage } = require('canvas');
+const config = require('../configs/config');
+
 const fs = require('fs');
 const cv = require('opencv.js');
-const config = require('../configs/config');
+const { createCanvas, loadImage, ImageData } = require('canvas');
+const sharp = require('sharp');
 
 // Utility function to save an OpenCV matrix as an image
 function saveMatAsImage(mat, filename) {
@@ -20,13 +21,13 @@ function saveMatAsImage(mat, filename) {
 }
 
 // Function to crop and save a section using sharp
-function cropAndSaveSection(inputImagePath, x1, x2, height, sectionIndex) {
+function cropAndSaveSection(inputImagePath, x1, x2, height, phraseIndex) {
     sharp(inputImagePath)
         .extract({ left: x1, top: 0, width: x2 - x1, height: height })
         .rotate(270)
-        .toFile(`section_${sectionIndex}.png`)
+        .toFile(`phrase_${phraseIndex}.png`)
         .then(() => {
-            console.log(`The cropped section has been saved to section_${sectionIndex}.png`);
+            console.log(`The cropped section has been saved to section_${phraseIndex}.png`);
         })
         .catch(err => {
             console.error('Error cropping the image:', err);
@@ -34,7 +35,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, height, sectionIndex) {
 }
 
 // Load the image
-const imagePath = './all-treble.png';
+const imagePath = '../output/2-to-phrases/etude-12/section_1.png'
 
 loadImage(imagePath).then((image) => {
     // Create a canvas and draw the image on it

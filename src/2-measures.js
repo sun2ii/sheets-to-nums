@@ -1,11 +1,9 @@
-const { createCanvas, loadImage, ImageData } = require('canvas');
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
-const { phrasesInputPath, phrasesOutputFolder } = require('../configs/config');
+const { phrasesInputPath, measuresOutputFolder } = require('../configs/config');
 
-// Load opencv.js
+const fs = require('fs');
 const cv = require('opencv.js');
+const { createCanvas, loadImage, ImageData } = require('canvas');
+const sharp = require('sharp');
 
 // Utility function to save a cv.Mat as an image
 function saveMat(mat, outputPath) {
@@ -20,16 +18,14 @@ function saveMat(mat, outputPath) {
 }
 
 // Function to crop and save the section using sharp
-function cropAndSaveSection(inputImagePath, x1, x2, sectionIndex) {
+function cropAndSaveSection(inputImagePath, x1, x2, phraseIndex) {
+    const measureFileName = `${measuresOutputFolder}phrase_${phraseIndex}.png`
     sharp(inputImagePath)
         .metadata()
         .then(metadata => {
             return sharp(inputImagePath)
                 .extract({ left: x1, top: 0, width: x2 - x1, height: metadata.height })
-                .toFile(`${phrasesOutputFolder}section_${sectionIndex}.png`);
-        })
-        .then(() => {
-            console.log(`The cropped section has been saved to ${phrasesOutputFolder}section_${sectionIndex}.png`);
+                .toFile(measureFileName);
         })
         .catch(err => {
             console.error('Error cropping the image:', err);
@@ -85,7 +81,7 @@ loadImage(phrasesInputPath).then(image => {
         }
 
         // Save the entire processed image with detected lines
-        saveMat(src, './output.png');
+        saveMat(src, measuresOutputFolder + 'output.png');
 
         // Sort the vertical lines based on x-coordinates
         verticalLines.sort((a, b) => a - b);

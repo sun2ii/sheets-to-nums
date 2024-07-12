@@ -34,7 +34,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, height, sectionIndex) {
 }
 
 // Load the image
-const imagePath = './all-treble.png';
+const imagePath = '../output/2-to-phrases/etude-12/section_1.png'
 
 loadImage(imagePath).then((image) => {
     // Create a canvas and draw the image on it
