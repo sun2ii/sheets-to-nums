@@ -1,33 +1,31 @@
-const config = require('../configs/config');
+// const measuresInput = '../output/2-to-phrases/etude-12/section_1.png'
+const { measuresInput, notesFolder } = require('../configs/config');
 
 const fs = require('fs');
 const cv = require('opencv.js');
 const { createCanvas, loadImage, ImageData } = require('canvas');
 const sharp = require('sharp');
 
-// Utility function to save an OpenCV matrix as an image
-function saveMatAsImage(mat, filename) {
+// Utility function to save a cv.Mat as an image
+function saveMat(mat, outputPath) {
     const canvas = createCanvas(mat.cols, mat.rows);
     const ctx = canvas.getContext('2d');
-    let img = new cv.Mat();
-    cv.cvtColor(mat, img, cv.COLOR_GRAY2RGBA);
-    const imgData = new ImageData(new Uint8ClampedArray(img.data), img.cols, img.rows);
-    ctx.putImageData(imgData, 0, 0);
-    const out = fs.createWriteStream(filename);
+    const imageData = new ImageData(new Uint8ClampedArray(mat.data), mat.cols, mat.rows);
+    ctx.putImageData(imageData, 0, 0);
+    const out = fs.createWriteStream(outputPath);
     const stream = canvas.createPNGStream();
     stream.pipe(out);
-    out.on('finish', () => console.log(`${filename} saved.`));
-    img.delete();
+    out.on('finish', () => console.log(`${outputPath}`));
 }
 
 // Function to crop and save a section using sharp
-function cropAndSaveSection(inputImagePath, x1, x2, height, phraseIndex) {
+function cropAndSaveSection(inputImagePath, x1, x2, height, measureIndex) {
     sharp(inputImagePath)
         .extract({ left: x1, top: 0, width: x2 - x1, height: height })
         .rotate(270)
-        .toFile(`phrase_${phraseIndex}.png`)
+        .toFile(`${notesFolder}note_${measureIndex}.png`)
         .then(() => {
-            console.log(`The cropped section has been saved to section_${phraseIndex}.png`);
+            console.log(`The cropped section has been saved to section_${measureIndex}.png`);
         })
         .catch(err => {
             console.error('Error cropping the image:', err);
@@ -35,9 +33,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, height, phraseIndex) {
 }
 
 // Load the image
-const imagePath = '../output/2-to-phrases/etude-12/section_1.png'
-
-loadImage(imagePath).then((image) => {
+loadImage(measuresInput).then((image) => {
     // Create a canvas and draw the image on it
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
@@ -50,23 +46,19 @@ loadImage(imagePath).then((image) => {
     // Convert to grayscale
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    // saveMatAsImage(gray, '_1-gray.png'); // Save intermediate grayscale image
 
     // Apply binary thresholding
     let binary = new cv.Mat();
     cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
-    // saveMatAsImage(binary, '_2-binary.png'); // Save intermediate binary image
 
     // Define a horizontal kernel and detect horizontal lines
     let horizontalKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(40, 1));
     let detectedLines = new cv.Mat();
     cv.morphologyEx(binary, detectedLines, cv.MORPH_OPEN, horizontalKernel);
-    // saveMatAsImage(detectedLines, '_3-detectedLines.png'); // Save detected horizontal lines image
 
     // Subtract detected lines from the binary image
     let horizontalRemoved = new cv.Mat();
     cv.subtract(binary, detectedLines, horizontalRemoved);
-    // saveMatAsImage(horizontalRemoved, '_4-horizontalRemoved.png'); // Save the image with horizontal lines removed
 
     // Optional: Clean up the remaining noise
     let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
@@ -98,7 +90,7 @@ loadImage(imagePath).then((image) => {
         console.log(`box ${validSectionIndex + 1}: x=${rect.x}, y=${rect.y}, width=${rect.width}, height=${rect.height}`);
 
         // Crop and save the section using sharp
-        cropAndSaveSection(imagePath, rect.x, rect.x + rect.width, src.rows, validSectionIndex + 1);
+        cropAndSaveSection(measuresInput, rect.x, rect.x + rect.width, src.rows, validSectionIndex + 1);
 
         // Draw the bounding box
         let point1 = new cv.Point(rect.x, 0);

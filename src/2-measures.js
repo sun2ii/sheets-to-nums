@@ -1,4 +1,4 @@
-const { phrasesInputPath, measuresOutputFolder } = require('../configs/config');
+const { measuresInput, measuresFolder } = require('../configs/config');
 
 const fs = require('fs');
 const cv = require('opencv.js');
@@ -14,12 +14,13 @@ function saveMat(mat, outputPath) {
     const out = fs.createWriteStream(outputPath);
     const stream = canvas.createPNGStream();
     stream.pipe(out);
-    out.on('finish', () => console.log(`The PNG file was created at ${outputPath}`));
+    out.on('finish', () => console.log(`${outputPath}`));
 }
 
 // Function to crop and save the section using sharp
 function cropAndSaveSection(inputImagePath, x1, x2, phraseIndex) {
-    const measureFileName = `${measuresOutputFolder}phrase_${phraseIndex}.png`
+    const measureFileName = `${measuresFolder}measure_${phraseIndex}.png`
+    console.log(`${measureFileName}`);
     sharp(inputImagePath)
         .metadata()
         .then(metadata => {
@@ -33,7 +34,7 @@ function cropAndSaveSection(inputImagePath, x1, x2, phraseIndex) {
 }
 
 // Load the image and process it
-loadImage(phrasesInputPath).then(image => {
+loadImage(measuresInput).then(image => {
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0, image.width, image.height);
@@ -81,7 +82,7 @@ loadImage(phrasesInputPath).then(image => {
         }
 
         // Save the entire processed image with detected lines
-        saveMat(src, measuresOutputFolder + 'output.png');
+        saveMat(src, measuresFolder + 'main.png');
 
         // Sort the vertical lines based on x-coordinates
         verticalLines.sort((a, b) => a - b);
@@ -99,7 +100,7 @@ loadImage(phrasesInputPath).then(image => {
         for (let i = 0; i < combinedLines.length - 1; i++) {
             let x1 = combinedLines[i];
             let x2 = combinedLines[i + 1];
-            cropAndSaveSection(phrasesInputPath, x1, x2, i);
+            cropAndSaveSection(measuresInput, x1, x2, i);
         }
 
         lines.delete();

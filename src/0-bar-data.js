@@ -1,42 +1,10 @@
-const sharp = require('sharp');
+const { measuresInput, measuresOutput, measuresFolder } = require('../configs/config');
+
 const { ImageData, createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const cv = require('opencv.js');
-const config = require('../configs/config');
 
-// Utility function to save an OpenCV matrix as an image
-function saveMatAsImage(mat, filename) {
-    const canvas = createCanvas(mat.cols, mat.rows);
-    const ctx = canvas.getContext('2d');
-    let img = new cv.Mat();
-    cv.cvtColor(mat, img, cv.COLOR_GRAY2RGBA);
-    const imgData = new ImageData(new Uint8ClampedArray(img.data), img.cols, img.rows);
-    ctx.putImageData(imgData, 0, 0);
-    const out = fs.createWriteStream(filename);
-    const stream = canvas.createPNGStream();
-    stream.pipe(out);
-    out.on('finish', () => console.log(`${filename} saved.`));
-    img.delete();
-}
-
-// Function to crop and save a section using sharp
-function cropAndSaveSection(inputImagePath, x1, x2, height, sectionIndex) {
-    sharp(inputImagePath)
-        .extract({ left: x1, top: 0, width: x2 - x1, height: height })
-        .rotate(270)
-        .toFile(`section_${sectionIndex}.png`)
-        .then(() => {
-            console.log(`The cropped section has been saved to section_${sectionIndex}.png`);
-        })
-        .catch(err => {
-            console.error('Error cropping the image:', err);
-        });
-}
-
-// Load the image
-const imagePath = '../output/2-to-phrases/etude-12/section_1.png'
-
-loadImage(imagePath).then((image) => {
+loadImage(measuresInput).then((image) => {
     // Create a canvas and draw the image on it
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
@@ -80,9 +48,6 @@ loadImage(imagePath).then((image) => {
         yCoordinateOccurrences[y] = (yCoordinateOccurrences[y] || 0) + 1;
     });
 
-    // Debug: log the counts of each y-coordinate
-    console.log('Occurrences of each y-coordinate:', yCoordinateOccurrences);
-
     // Get the sorted y-coordinates excluding 0
     let sortedYCoordinates = Object.entries(yCoordinateOccurrences)
         .map(entry => parseInt(entry[0]))
@@ -120,7 +85,7 @@ loadImage(imagePath).then((image) => {
     allYCoordinates.push(finalYCoordinates[finalYCoordinates.length - 1]);
 
     // Save the top 5 y-coordinates and intermediate coordinates to a JSON file
-    fs.writeFileSync('bars.json', JSON.stringify({ top5YCoordinates: allYCoordinates.sort((a, b) => a - b) }, null, 2));
+    fs.writeFileSync(measuresFolder + 'bars.json', JSON.stringify({ top5YCoordinates: allYCoordinates.sort((a, b) => a - b) }, null, 2));
 
     // Save the annotated image
     const outputImageData = new ImageData(new Uint8ClampedArray(src.data), src.cols, src.rows);
@@ -136,12 +101,11 @@ loadImage(imagePath).then((image) => {
     rotatedCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
 
     // Save the rotated image to a file
-    const out = fs.createWriteStream('./_6-output.png');
+    const out = fs.createWriteStream(measuresOutput);
     const stream = rotatedCanvas.createPNGStream();
     stream.pipe(out);
     out.on('finish', () => {
-        console.log('The image was created.');
-        console.log('Top 5 y-coordinates and intermediate coordinates:', allYCoordinates.sort((a, b) => a - b));
+        console.log(allYCoordinates.sort((a, b) => a - b));
     });
 
     // Cleanup

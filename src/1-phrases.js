@@ -1,4 +1,4 @@
-const { sheetInputPath, phrasesOutputFolder, phrasesOutputPath, templateFolder } = require('../configs/config.js');
+const { sheetInput, phrasesFolder, phrasesOutput, templateFolder } = require('../configs/config.js');
 
 const fs = require('fs');
 const cv = require('opencv.js');
@@ -73,7 +73,7 @@ async function loadTemplates(folderPath) {
 
 async function detectTrebleClefs() {
     try {
-        const src = await loadImage(sheetInputPath);
+        const src = await loadImage(sheetInput);
         const canvas = createCanvas(src.width, src.height);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(src, 0, 0, src.width, src.height);
@@ -87,8 +87,8 @@ async function detectTrebleClefs() {
         const templates = await loadTemplates(templateFolder);
 
         // Ensure the output directory exists
-        if (!fs.existsSync(phrasesOutputFolder)) {
-            fs.mkdirSync(phrasesOutputFolder, { recursive: true });
+        if (!fs.existsSync(phrasesFolder)) {
+            fs.mkdirSync(phrasesFolder, { recursive: true });
         }
 
         let phraseCount = 1;
@@ -133,7 +133,7 @@ async function detectTrebleClefs() {
             const phraseCtx = phraseCanvas.getContext('2d');
             phraseCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
             const phraseFileName = `phrase_${phraseCount}.png`;
-            const phraseOutPath = path.join(phrasesOutputFolder, phraseFileName);
+            const phraseOutPath = path.join(phrasesFolder, phraseFileName);
             const phraseOut = fs.createWriteStream(phraseOutPath);
             const phraseStream = phraseCanvas.createPNGStream();
             phraseStream.pipe(phraseOut);
@@ -142,7 +142,7 @@ async function detectTrebleClefs() {
         }
 
         // Save the result
-        const out = fs.createWriteStream(phrasesOutputPath);
+        const out = fs.createWriteStream(phrasesOutput);
         const stream = canvas.createPNGStream();
         stream.pipe(out);
     }  catch (error) {

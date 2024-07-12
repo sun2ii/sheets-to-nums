@@ -1,19 +1,27 @@
 const musicSheet = "etude-12";
+const phrase = "phrase_1";
+const measure = "measure_1";
 
 module.exports = {
   // Folders
   templateFolder: '../templates/trebles',
+  phrasesFolder: `../output/1-phrases/${musicSheet}/`,
+  measuresFolder: `../output/2-measures/${musicSheet}/`,
+  notesFolder: `../output/3-notes/${musicSheet}/`,
+
+  // 0. Bar Data
+  measuresInput: `../output/2-measures/${musicSheet}/${measure}.png`,
+  measuresOutput: `../output/2-measures/${musicSheet}/vertical.png`,
 
   // 1. Phrases
-  sheetInputPath: `../input/${musicSheet}.png`,
-  phrasesOutputPath: `../output/1-phrases/main/${musicSheet}.png`,
-  phrasesOutputFolder: `../output/1-phrases/${musicSheet}/`,
+  sheetInput: `../input/${musicSheet}.png`,
+  phrasesOutput: `../output/1-phrases/${musicSheet}/main.png`,
 
   // 2. Measures
-  phrasesInputPath: `../output/1-phrases/${musicSheet}/note_2.png`,
-  measuresOutputFolder: `../output/2-measures/${musicSheet}/`,
+  phrasesInput: `../output/1-phrases/${musicSheet}/${phrase}.png`,
 
   // 3. Notes
+  notesInput: `../output/2-measures/${musicSheet}/${measure}.png`,
 
   // 4. JSON
 
